@@ -17,6 +17,7 @@ const corsOption = {
 // Routes
 const userRoute = require("./Routes/userRoutes");
 const jobRoute = require("./Routes/jobRoutes");
+const { authenticateUser } = require("./Middlewares/authenticateUser");
 
 const { NotFoundError } = require("./Errors/index");
 const generalErrorAPI = require("./Middlewares/generalErrors");
@@ -28,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // == Routes == //
 app.use("/api/v1/auth", userRoute);
-app.use("/api/v1/job", jobRoute);
+app.use("/api/v1/job", authenticateUser, jobRoute);
 
 // == Error Routes == //
 app.use(NotFoundError);
@@ -40,7 +41,7 @@ const PORT = process.env.PORT || 5000;
 const start = async () => {
   try {
     // database connection
-    // await database(process.env.MONGO_URL);
+    await database(process.env.MONGO_URL);
     app.listen(PORT, () =>
       console.log(`Database connected and Server running on port : ${PORT}...`)
     );
