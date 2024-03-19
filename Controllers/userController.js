@@ -1,109 +1,146 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../Models/UserModel");
-const {
-  validateNewUser,
-  validateLoginUser,
-} = require("../Validations/userValidate");
-const {
-  hashPassword,
-  checkPassword,
-  generateToken,
-  formattedResponse,
-} = require("../Utils/hashPassword");
+const { validateUpdateUser } = require("../Validations/userValidate");
 
-// == REGISTER == //
-const registerNewUser = async (req, res) => {
+// == VIEW USER PROFILE == //
+const getASingleUser = async (req, res) => {
   try {
-    const { error, value } = validateNewUser(req.body);
-    if (error) {
-      console.log(error);
+    const userId = req.params.id;
+
+    if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         status: "error",
         ok: false,
-        msg: error.details[0].message,
+        msg: `Provide a user id`,
       });
     }
 
-    if (value.password !== value.confirmPassword) {
+    if (req.authorizedUser.id != userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         status: "error",
         ok: false,
-        msg: "Passwords do not match",
+        msg: `Provide a valid user id`,
       });
     }
 
-    const user = await User.findOne({ email: value.email });
-    if (user) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        status: "error",
-        ok: false,
-        msg: "Email already exist, choose another email",
-      });
-    }
-
-    const newPassword = hashPassword(value.password);
-    value.password = newPassword;
-
-    const newUser = new User({ ...value });
-    await newUser.save();
-    newUser.password = undefined;
-    newUser.__v = undefined;
-
-    res.status(StatusCodes.CREATED).json({
-      status: "error",
-      ok: false,
-      msg: "Account created successfully",
-      newUser,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: error });
-  }
-};
-
-// == LOGIN == //
-const loginUser = async (req, res) => {
-  try {
-    const { error, value } = validateLoginUser(req.body);
-    if (error) {
-      console.log(error);
-      res.status(StatusCodes.BAD_REQUEST).json({
-        status: "error",
-        ok: false,
-        msg: error.details[0].message,
-      });
-    }
-
-    const user = await User.findOne({ email: value.email });
+    const user = await User.findOne({ _id: userId });
     if (!user) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         status: "error",
         ok: false,
-        msg: "Bad credentials",
+        msg: `User not found`,
       });
     }
 
-    const isPasswordMatch = checkPassword(value.password, user.password);
-    if (!isPasswordMatch) {
+    res.status(StatusCodes.OK).json({ status: "success", ok: true, user });
+  } catch (error) {
+    console.log(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      msg: "Unable to get a user",
+    });
+  }
+};
+
+// == EDIT USER PROFILE == //
+const updateASingleUser = async (req, res) => {
+  try {
+    const { error, value } = validateUpdateUser(req.body);
+    if (error) {
+      console.log(error);
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ status: "error", ok: false, msg: error.details[0].message });
+    }
+
+    const userId = req.params.id;
+    if (!userId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         status: "error",
         ok: false,
-        msg: "Invalid Email or Password",
+        msg: `Provide a user id`,
       });
     }
 
-    const token = generateToken(user);
-    const response = formattedResponse(user, token);
+    if (req.authorizedUser.id != userId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        ok: false,
+        msg: `Provide a valid user id`,
+      });
+    }
+
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        ok: false,
+        msg: `User not found`,
+      });
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email: user.email },
+      { ...value },
+      { new: true, runValidators: true }
+    );
+
+    res
+      .status(StatusCodes.OK)
+      .json({ status: "success", ok: true, updatedUser });
+  } catch (error) {
+    console.log(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      msg: "Unable to update user",
+    });
+  }
+};
+
+// == DELETE USER PROFILE == //
+const deleteASingleUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        ok: false,
+        msg: `Provide a user id`,
+      });
+    }
+
+    if (req.authorizedUser.id != userId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        ok: false,
+        msg: `Provide a valid user id`,
+      });
+    }
+
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        ok: false,
+        msg: `User not found`,
+      });
+    }
+
+    await User.findOneAndDelete({
+      email: user.email,
+      _id: req.authorizedUser.id,
+    });
 
     res.status(StatusCodes.OK).json({
       status: "success",
       ok: true,
-      msg: response,
+      msg: "Account deleted successfully",
     });
   } catch (error) {
     console.log(error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: error });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      msg: "Unable to delete account",
+    });
   }
 };
 
-module.exports = { registerNewUser, loginUser };
+module.exports = { getASingleUser, updateASingleUser, deleteASingleUser };

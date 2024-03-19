@@ -128,6 +128,7 @@ const getASingleJob = async (req, res) => {
   }
 };
 
+// == UPDATE A SINGLE JOB TO INTERVIEW STATUS == //
 const updateAJob = async (req, res) => {
   try {
     const {
@@ -188,6 +189,7 @@ const updateAJob = async (req, res) => {
   }
 };
 
+// == UPDATE A SINGLE JOB TO DELETED STATUS == //
 const rejectedJobApplication = async (req, res) => {
   try {
     const {
@@ -244,6 +246,7 @@ const rejectedJobApplication = async (req, res) => {
   }
 };
 
+// == DELETE A SINGLE JOB == //
 const deleteASingleJob = async (req, res) => {
   try {
     const {
@@ -291,13 +294,38 @@ const deleteASingleJob = async (req, res) => {
   }
 };
 
+// == DELETE ALL JOBS == //
 const deleteAllJobs = async (req, res) => {
   try {
-    res.send("delete all job");
+    const deleteJobs = await Job.deleteMany({
+      createdBy: req.authorizedUser.id,
+    });
+
+    if (!deleteJobs) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        status: "error",
+        ok: false,
+        msg: `Unauthorized user access`,
+      });
+    }
+
+    if (deleteJobs.length < 1) {
+      return res.status(StatusCodes.OK).json({
+        status: "success",
+        ok: true,
+        msg: `No jobs to delete`,
+      });
+    }
+
+    res.status(StatusCodes.OK).json({
+      status: "success",
+      ok: true,
+      msg: "All jobs deleted successfully",
+    });
   } catch (error) {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      msg: "Unable to update job",
+      msg: "Unable to delete all jobs",
     });
   }
 };

@@ -1,6 +1,6 @@
 const Joi = require("joi");
 
-const validateCreateJob = (user) => {
+const validateCreateJob = (job) => {
   const schema = Joi.object({
     company: Joi.string().min(3).max(50).required(),
     companyInfo: Joi.string().min(3).max(50).required(),
@@ -9,7 +9,7 @@ const validateCreateJob = (user) => {
     createdBy: Joi.object().id(),
   });
 
-  return schema.validate(user);
+  return schema.validate(job);
 };
 
 module.exports = { validateCreateJob };

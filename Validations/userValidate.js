@@ -2,9 +2,9 @@ const Joi = require("joi");
 
 const validateNewUser = (user) => {
   const schema = Joi.object({
-    userName: Joi.string().alphanum().min(3).max(30).required(),
-    firstName: Joi.string().alphanum().min(3).max(30).required(),
-    lastName: Joi.string().alphanum().min(3).max(30).required(),
+    userName: Joi.string().min(3).max(30).required(),
+    firstName: Joi.string().min(3).max(30).required(),
+    lastName: Joi.string().min(3).max(30).required(),
     password: Joi.string().required(),
     confirmPassword: Joi.string().required(),
     email: Joi.string().email().required(),
@@ -22,4 +22,14 @@ const validateLoginUser = (user) => {
   return schema.validate(user);
 };
 
-module.exports = { validateNewUser, validateLoginUser };
+const validateUpdateUser = (user) => {
+  const schema = Joi.object({
+    userName: Joi.string().min(3).max(30),
+    firstName: Joi.string().min(3).max(30),
+    lastName: Joi.string().min(3).max(30),
+  });
+
+  return schema.validate(user);
+};
+
+module.exports = { validateNewUser, validateLoginUser, validateUpdateUser };
