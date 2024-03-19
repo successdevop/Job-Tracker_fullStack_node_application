@@ -2,18 +2,18 @@ const jwt = require("jsonwebtoken");
 const { StatusCodes } = require("http-status-codes");
 const User = require("../Models/UserModel");
 
-const authenticateUser = async (req, res, next) => {
+const verifyUserToken = async (req, res, next) => {
   try {
-    const authHeaderToken = req.headers.authorization.split(" ")[1];
-    if (!authHeaderToken || authHeaderToken === undefined) {
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token || token === undefined) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        status: StatusCodes.UNAUTHORIZED,
+        status: "error",
         ok: false,
-        msg: "Authentication invalid",
+        msg: "Invalid Token Credentials",
       });
     }
 
-    const decode = jwt.verify(authHeaderToken, process.env.JWT_SECRET);
+    const decode = jwt.verify(token, process.env.JWT_SECRET);
     if (decode.id && decode.email) {
       const user = await User.findOne({ email: decode.email }).select(
         "-password"
@@ -23,9 +23,9 @@ const authenticateUser = async (req, res, next) => {
         next();
       } else {
         return res.status(StatusCodes.UNAUTHORIZED).json({
-          status: StatusCodes.UNAUTHORIZED,
+          status: "error",
           ok: false,
-          msg: "Authentication invalid",
+          msg: "Bad Credentials",
         });
       }
     }
@@ -33,8 +33,8 @@ const authenticateUser = async (req, res, next) => {
     console.log(error);
     res
       .status(StatusCodes.UNAUTHORIZED)
-      .json({ msg: "Authentication invalid" });
+      .json({ msg: "User not authenticated" });
   }
 };
 
-module.exports = { authenticateUser };
+module.exports = { verifyUserToken };

@@ -17,7 +17,7 @@ const corsOption = {
 // Routes
 const userRoute = require("./Routes/userRoutes");
 const jobRoute = require("./Routes/jobRoutes");
-const { authenticateUser } = require("./Middlewares/authenticateUser");
+const { verifyUserToken } = require("./Middlewares/verifyUser");
 
 const { NotFoundError } = require("./Errors/index");
 const generalErrorAPI = require("./Middlewares/generalErrors");
@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // == Routes == //
 app.use("/api/v1/auth", userRoute);
-app.use("/api/v1/job", authenticateUser, jobRoute);
+app.use("/api/v1/job", verifyUserToken, jobRoute);
 
 // == Error Routes == //
 app.use(NotFoundError);

@@ -6,6 +6,7 @@ const {
   getASingleJob,
   updateAJob,
   deleteASingleJob,
+  rejectedJobApplication,
 } = require("../Controllers/jobController");
 const jobRouter = express.Router();
 
@@ -15,10 +16,12 @@ jobRouter
   .post(createNewJob)
   .delete(deleteAllJobs);
 
+jobRouter.route("/rejected/:id").patch(rejectedJobApplication);
+
 jobRouter
   .route("/:id")
   .get(getASingleJob)
-  .put(updateAJob)
+  .patch(updateAJob)
   .delete(deleteASingleJob);
 
 module.exports = jobRouter;

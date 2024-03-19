@@ -1,9 +1,9 @@
+const { StatusCodes } = require("http-status-codes");
+const User = require("../Models/UserModel");
 const {
   validateNewUser,
   validateLoginUser,
 } = require("../Validations/userValidate");
-const User = require("../Models/UserModel");
-const { StatusCodes } = require("http-status-codes");
 const {
   hashPassword,
   checkPassword,
@@ -18,7 +18,7 @@ const registerNewUser = async (req, res) => {
     if (error) {
       console.log(error);
       return res.status(StatusCodes.BAD_REQUEST).json({
-        status: StatusCodes.BAD_REQUEST,
+        status: "error",
         ok: false,
         msg: error.details[0].message,
       });
@@ -26,9 +26,18 @@ const registerNewUser = async (req, res) => {
 
     if (value.password !== value.confirmPassword) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        status: StatusCodes.BAD_REQUEST,
+        status: "error",
         ok: false,
         msg: "Passwords do not match",
+      });
+    }
+
+    const user = await User.findOne({ email: value.email });
+    if (user) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        ok: false,
+        msg: "Email already exist, choose another email",
       });
     }
 
@@ -40,7 +49,12 @@ const registerNewUser = async (req, res) => {
     newUser.password = undefined;
     newUser.__v = undefined;
 
-    res.status(StatusCodes.CREATED).json({ newUser });
+    res.status(StatusCodes.CREATED).json({
+      status: "error",
+      ok: false,
+      msg: "Account created successfully",
+      newUser,
+    });
   } catch (error) {
     console.log(error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: error });
@@ -54,35 +68,35 @@ const loginUser = async (req, res) => {
     if (error) {
       console.log(error);
       res.status(StatusCodes.BAD_REQUEST).json({
-        status: StatusCodes.BAD_REQUEST,
+        status: "error",
         ok: false,
         msg: error.details[0].message,
       });
     }
 
-    const isUserExist = await User.findOne({ email: value.email });
-    if (!isUserExist) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({
-        status: StatusCodes.UNAUTHORIZED,
+    const user = await User.findOne({ email: value.email });
+    if (!user) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
         ok: false,
-        msg: "Invalid credentials",
+        msg: "Bad credentials",
       });
     }
 
-    const isPasswordMatch = checkPassword(value.password, isUserExist.password);
+    const isPasswordMatch = checkPassword(value.password, user.password);
     if (!isPasswordMatch) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        status: StatusCodes.BAD_REQUEST,
+        status: "error",
         ok: false,
         msg: "Invalid Email or Password",
       });
     }
 
-    const token = generateToken(isUserExist);
-    const response = formattedResponse(isUserExist, token);
+    const token = generateToken(user);
+    const response = formattedResponse(user, token);
 
     res.status(StatusCodes.OK).json({
-      status: StatusCodes.OK,
+      status: "success",
       ok: true,
       msg: response,
     });
